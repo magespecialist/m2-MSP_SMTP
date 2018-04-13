@@ -9,4 +9,20 @@
             </argument>
         </arguments>
     </type>
+    
+    <type name="Magento\Config\Model\Config\TypePool">
+        <arguments>
+            <argument name="sensitive" xsi:type="array">
+                <item name="system/msp_smtp/password" xsi:type="string">1</item>
+                <item name="system/msp_smtp/username" xsi:type="string">1</item>
+            </argument>
+            <argument name="environment" xsi:type="array">
+                <item name="system/msp_smtp/host" xsi:type="string">1</item>
+                <item name="system/msp_smtp/port" xsi:type="string">1</item>
+                <item name="system/msp_smtp/auth" xsi:type="string">1</item>
+                <item name="system/msp_smtp/ssl" xsi:type="string">1</item>
+            </argument>
+        </arguments>
+    </type>
+
 </config>
