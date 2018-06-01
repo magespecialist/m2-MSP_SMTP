@@ -30,6 +30,11 @@
                     <label>Use SSL/TLS</label>
                     <source_model>MSP\SMTP\Source\Secure</source_model>
                 </field>
+                <field id="debug" translate="label,comment" type="select" sortOrder="10" showInDefault="1" showInWebsite="0" showInStore="0">
+                    <label>Debug mode</label>
+                    <comment>Setting this to yes will output more info in /var/log/smtp.log</comment>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                </field>
             </group>
         </section>
     </system>

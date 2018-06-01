@@ -23,26 +23,33 @@ namespace MSP\SMTP\Mail;
 use Magento\Framework\Mail\MessageInterface;
 use Magento\Framework\Mail\TransportInterface;
 use MSP\SMTP\Model\Config;
+use Psr\Log\LoggerInterface;
 
 class Transport extends \Zend_Mail_Transport_Smtp implements TransportInterface
 {
     protected $config;
     protected $message;
+    protected $logger;
 
     public function __construct(
         Config $config,
-        MessageInterface $message
+        MessageInterface $message,
+        LoggerInterface $logger
     ) {
+
+
         if (!$message instanceof \Zend_Mail) {
             throw new \InvalidArgumentException('The message should be an instance of \Zend_Mail');
         }
 
         $this->config = $config;
         $this->message = $message;
+        $this->logger = $logger;
 
         $host = $this->config->getHost();
 
         $configuration = $this->getConfiguration();
+
 
         parent::__construct($host, $configuration);
     }
@@ -57,7 +64,12 @@ class Transport extends \Zend_Mail_Transport_Smtp implements TransportInterface
     {
         try {
             parent::send($this->message);
+
+            if ($this->config->getDebugMode()) {
+                $this->logger->log(Logger::DEBUG, __("Mail sent to %1 with subject %2", implode(',', $this->message->getRecipients()), $this->message->getSubject()));
+            }
         } catch (\Exception $e) {
+            $this->logger->log(Logger::ERROR, __("Failed to send email %1 with subject %2; error: %3", implode(',', $this->message->getRecipients()), $this->message->getSubject(), $e->getMessage()));
             throw new \Magento\Framework\Exception\MailException(new \Magento\Framework\Phrase($e->getMessage()), $e);
         }
     }

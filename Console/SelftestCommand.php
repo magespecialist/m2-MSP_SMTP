@@ -1,6 +1,6 @@
 <?php
 /**
- * MageSpecialist
+ * IDEALIAGroup srl
  *
  * NOTICE OF LICENSE
  *
@@ -10,11 +10,9 @@
  * http://opensource.org/licenses/osl-3.0.php
  * If you did not receive a copy of the license and are unable to
  * obtain it through the world-wide-web, please send an email
- * to info@magespecialist.it so we can send you a copy immediately.
+ * to info@idealiagroup.com so we can send you a copy immediately.
  *
- * @category   MSP
- * @package    MSP_SMTP
- * @copyright  Copyright (c) 2018 Skeeller srl (http://www.magespecialist.it)
+ * @copyright  Copyright (c) 2014 IDEALIAGroup srl (http://www.idealiagroup.com)
  * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
@@ -22,8 +20,10 @@ namespace MSP\SMTP\Console;
 
 use Magento\Framework\App\Area;
 use Magento\Framework\App\Config\ScopeConfigInterface;
+use Magento\Framework\App\State;
 use Magento\Framework\DataObject;
 use Magento\Framework\Mail\Template\TransportBuilder;
+use Magento\Framework\ObjectManagerInterface;
 use Magento\Store\Model\ScopeInterface;
 use Magento\Store\Model\Store;
 use MSP\SMTP\Model\Config;
@@ -33,21 +33,17 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 class SelftestCommand extends Command
 {
-    protected $scopeConfig;
-    protected $transportBuilder;
-    protected $config;
+    /**
+     * @var ObjectManagerInterface
+     */
+    private $objectManager;
 
     public function __construct(
-        ScopeConfigInterface $scopeConfigInterface,
-        TransportBuilder $transportBuilder,
-        Config $config,
+        ObjectManagerInterface $objectManager,
         $name = null
     ) {
 
-        $this->scopeConfig = $scopeConfigInterface;
-        $this->transportBuilder = $transportBuilder;
-        $this->config = $config;
-
+        $this->objectManager = $objectManager;
         parent::__construct($name);
     }
 
@@ -59,19 +55,33 @@ class SelftestCommand extends Command
 
     public function execute(InputInterface $input, OutputInterface $output)
     {
+
+        $state = $this->objectManager->get(State::class);
+
+        try {
+            $state->getAreaCode();
+        } catch (\Exception $e) {
+            $state->setAreaCode(Area::AREA_ADMINHTML);
+        }
+
+        $scopeConfig = $this->objectManager->get(ScopeConfigInterface::class);
+        $transportBuilder = $this->objectManager->get(TransportBuilder::class);
+        $config = $this->objectManager->get(Config::class);
+
+
         $contact = [
-            'email' => $this->scopeConfig->getValue('contact/email/recipient_email'),
+            'email' => $scopeConfig->getValue('contact/email/recipient_email'),
             'name' => 'SMTP self test'
         ];
 
         $output->writeln('<info>Starting test:</info>');
         $output->writeln('Attempting to send mail to ' . $contact['email'] . " ... plese wait");
         $output->write("Smtp configuration:\nHost: "
-            . $this->config->getHost() . "\nPort: "
-            . $this->config->getPort() . "\nUser: "
-            . $this->config->getUsername() . "\nAuth: "
-            . $this->config->getAuthType() . "\nTLS/SSL: "
-            . $this->config->getSSL(), true);
+            . $config->getHost() . "\nPort: "
+            . $config->getPort() . "\nUser: "
+            . $config->getUsername() . "\nAuth: "
+            . $config->getAuthType() . "\nTLS/SSL: "
+            . $config->getSSL(), true);
 
         $postObject = new DataObject();
         $postObject->setData(
@@ -84,8 +94,8 @@ class SelftestCommand extends Command
         );
 
         try {
-            $transport = $this->transportBuilder
-                ->setTemplateIdentifier($this->scopeConfig->getValue('contact/email/email_template', ScopeInterface::SCOPE_STORE))
+            $transport = $transportBuilder
+                ->setTemplateIdentifier($scopeConfig->getValue('contact/email/email_template', ScopeInterface::SCOPE_STORE))
                 ->setTemplateOptions(
                     [
                         'area' => Area::AREA_FRONTEND,
@@ -105,7 +115,7 @@ class SelftestCommand extends Command
             $output->writeln('<info>Test successful!</info>');
             $output->writeln('Mail sent without errors on our side, check your mailbox for email.');
         } catch (\Exception $e) {
-            $output->write("<error>Test failed with error:\n\n" . $e->getMessage() . "</error>", true);
+            $output->write("<error>Test failed with error:\n\n". $e->getMessage() . "</error>", true);
         }
     }
 }

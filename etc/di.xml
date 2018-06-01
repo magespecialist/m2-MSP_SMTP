@@ -1,7 +1,9 @@
 <?xml version="1.0"?>
 <config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:noNamespaceSchemaLocation="urn:magento:framework:ObjectManager/etc/config.xsd">
-    <preference for="Magento\Framework\Mail\TransportInterface" type="MSP\SMTP\Mail\Transport"/>
+
+    <preference for="Magento\Framework\Mail\TransportInterface" type="MSP\SMTP\Mail\Transport" />
+
     <type name="Magento\Framework\Console\CommandList">
         <arguments>
             <argument name="commands" xsi:type="array">
@@ -9,7 +11,22 @@
             </argument>
         </arguments>
     </type>
-    
+
+    <virtualType name="MSP\SMTP\Log\Logger" type="\Monolog\Logger">
+        <arguments>
+            <argument name="name" xsi:type="string">MSP::SMTP</argument>
+            <argument name="handlers"  xsi:type="array">
+                <item name="system" xsi:type="object">MSP\SMTP\Log\Handler</item>
+            </argument>
+        </arguments>
+    </virtualType>
+
+    <type name="MSP\SMTP\Mail\Transport">
+        <arguments>
+            <argument name="logger" xsi:type="object">MSP\SMTP\Log\Logger</argument>
+        </arguments>
+    </type>
+
     <type name="Magento\Config\Model\Config\TypePool">
         <arguments>
             <argument name="sensitive" xsi:type="array">
