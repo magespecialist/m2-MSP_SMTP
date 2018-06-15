@@ -22,6 +22,7 @@ namespace MSP\SMTP\Mail;
 
 use Magento\Framework\Mail\MessageInterface;
 use Magento\Framework\Mail\TransportInterface;
+use Monolog\Logger;
 use MSP\SMTP\Model\Config;
 use Psr\Log\LoggerInterface;
 
