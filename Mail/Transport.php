@@ -37,12 +37,6 @@ class Transport extends \Zend_Mail_Transport_Smtp implements TransportInterface
         MessageInterface $message,
         LoggerInterface $logger
     ) {
-
-
-        if (!$message instanceof \Zend_Mail) {
-            throw new \InvalidArgumentException('The message should be an instance of \Zend_Mail');
-        }
-
         $this->config = $config;
         $this->message = $message;
         $this->logger = $logger;
