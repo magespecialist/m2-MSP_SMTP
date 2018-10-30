@@ -21,15 +21,33 @@
 namespace MSP\SMTP\Mail;
 
 use Magento\Framework\Mail\MessageInterface;
-use Magento\Framework\Mail\TransportInterface;
 use Monolog\Logger;
-use MSP\SMTP\Model\Config;
 use Psr\Log\LoggerInterface;
+use MSP\SMTP\Model\Config;
+use Zend\Mail\Message as ZendMessage;
+use Zend\Mail\Transport\Smtp;
+use Zend\Mail\Transport\SmtpOptions;
 
-class Transport extends \Zend_Mail_Transport_Smtp implements TransportInterface
+class Transport implements \Magento\Framework\Mail\TransportInterface
 {
+    /**
+     * @var Smtp
+     */
+    private $zendTransport;
+
+    /**
+     * @var MessageInterface
+     */
+    private $message;
+
+    /**
+     * @var Config
+     */
     protected $config;
-    protected $message;
+
+    /**
+     * @var LoggerInterface
+     */
     protected $logger;
 
     public function __construct(
@@ -37,34 +55,21 @@ class Transport extends \Zend_Mail_Transport_Smtp implements TransportInterface
         MessageInterface $message,
         LoggerInterface $logger
     ) {
-
-
-        if (!$message instanceof \Zend_Mail) {
-            throw new \InvalidArgumentException('The message should be an instance of \Zend_Mail');
-        }
-
         $this->config = $config;
         $this->message = $message;
         $this->logger = $logger;
-
-        $host = $this->config->getHost();
-
-        $configuration = $this->getConfiguration();
-
-
-        parent::__construct($host, $configuration);
+        $this->zendTransport = new Smtp();
     }
 
     /**
-     * Send a mail using this transport
-     *
-     * @return void
-     * @throws \Magento\Framework\Exception\MailException
+     * @inheritdoc
      */
     public function sendMessage()
     {
         try {
-            parent::send($this->message);
+            $options = new SmtpOptions($this->getConfiguration());
+            $this->zendTransport->setOptions($options);
+            $this->zendTransport->send(ZendMessage::fromString($this->message->getRawMessage()));
 
             if ($this->config->getDebugMode()) {
                 $this->logger->log(Logger::DEBUG, __("Mail sent to %1 with subject %2", implode(',', $this->message->getRecipients()), $this->message->getSubject()));
@@ -76,18 +81,28 @@ class Transport extends \Zend_Mail_Transport_Smtp implements TransportInterface
     }
 
     /**
+     * @inheritdoc
+     */
+    public function getMessage()
+    {
+        return $this->message;
+    }
+
+    /**
      * @return array
      */
     public function getConfiguration()
     {
         $config = [
             'port' => $this->config->getPort(),
-            'auth' => $this->config->getAuthType(),
+            'connection_class' => $this->config->getAuthType(),
+            'host' => $this->config->getHost()
         ];
 
         if ($this->config->getAuthType() == 'login') {
-            $config['username'] = $this->config->getUsername();
-            $config['password'] = $this->config->getPassword();
+            $config['connection_config'] = [];
+            $config['connection_config']['username'] = $this->config->getUsername();
+            $config['connection_config']['password'] = $this->config->getPassword();
         }
 
         if ($this->config->getSSL() !== 'no') {
@@ -95,10 +110,5 @@ class Transport extends \Zend_Mail_Transport_Smtp implements TransportInterface
         }
 
         return $config;
-    }
-
-    public function getMessage()
-    {
-        return $this->message;
     }
 }

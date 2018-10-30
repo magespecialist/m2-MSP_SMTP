@@ -3,6 +3,7 @@
     "description": "",
     "require": {
         "php": "^7.0|^7.1",
+        "magento/magento2-base": "^2.3.0",
         "msp/common": "*",
         "magento/magento-composer-installer": "*"
     },
