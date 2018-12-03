@@ -31,24 +31,21 @@ use Zend\Mail\Transport\SmtpOptions;
 class Transport implements \Magento\Framework\Mail\TransportInterface
 {
     /**
-     * @var Smtp
-     */
-    private $zendTransport;
-
-    /**
-     * @var MessageInterface
-     */
-    private $message;
-
-    /**
      * @var Config
      */
     protected $config;
-
     /**
      * @var LoggerInterface
      */
     protected $logger;
+    /**
+     * @var Smtp
+     */
+    private $zendTransport;
+    /**
+     * @var MessageInterface
+     */
+    private $message;
 
     public function __construct(
         Config $config,
@@ -69,23 +66,21 @@ class Transport implements \Magento\Framework\Mail\TransportInterface
         try {
             $options = new SmtpOptions($this->getConfiguration());
             $this->zendTransport->setOptions($options);
-            $this->zendTransport->send(ZendMessage::fromString($this->message->getRawMessage()));
+            /** @var \Zend\Mail\Message $message */
+            $message = ZendMessage::fromString($this->message->getRawMessage());
+            $this->zendTransport->send($message);
 
             if ($this->config->getDebugMode()) {
-                $this->logger->log(Logger::DEBUG, __("Mail sent to %1 with subject %2", implode(',', $this->message->getRecipients()), $this->message->getSubject()));
+                /** @var \Zend\Mail\Message $message */
+                $message = ZendMessage::fromString($this->message->getRawMessage());
+                $this->logger->log(Logger::DEBUG, __("Mail sent to %1 with subject %2", $message->getTo()->current()->getEmail(), $message->getSubject()));
             }
         } catch (\Exception $e) {
-            $this->logger->log(Logger::ERROR, __("Failed to send email %1 with subject %2; error: %3", implode(',', $this->message->getRecipients()), $this->message->getSubject(), $e->getMessage()));
+            /** @var \Zend\Mail\Message $message */
+            $message = ZendMessage::fromString($this->message->getRawMessage());
+            $this->logger->log(Logger::ERROR, __("Failed to send email %1 with subject %2; error: %3", $message->getTo()->current()->getEmail(), $message->getSubject(), $e->getMessage()));
             throw new \Magento\Framework\Exception\MailException(new \Magento\Framework\Phrase($e->getMessage()), $e);
         }
-    }
-
-    /**
-     * @inheritdoc
-     */
-    public function getMessage()
-    {
-        return $this->message;
     }
 
     /**
@@ -96,19 +91,27 @@ class Transport implements \Magento\Framework\Mail\TransportInterface
         $config = [
             'port' => $this->config->getPort(),
             'connection_class' => $this->config->getAuthType(),
-            'host' => $this->config->getHost()
+            'host' => $this->config->getHost(),
+            'connection_config' => []
         ];
 
         if ($this->config->getAuthType() == 'login') {
-            $config['connection_config'] = [];
             $config['connection_config']['username'] = $this->config->getUsername();
             $config['connection_config']['password'] = $this->config->getPassword();
         }
 
         if ($this->config->getSSL() !== 'no') {
-            $config['ssl'] = $this->config->getSSL();
+            $config['connection_config']['ssl'] = $this->config->getSSL();
         }
 
         return $config;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getMessage()
+    {
+        return $this->message;
     }
 }
