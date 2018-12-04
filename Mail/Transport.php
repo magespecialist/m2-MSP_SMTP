@@ -76,11 +76,11 @@ class Transport implements \Magento\Framework\Mail\TransportInterface
         $this->getMailer()->isSMTP();
         $this->getMailer()->Host = $this->config->getHost();
         if ($this->config->getAuthType() === 'login') {
-            $this->getMailer()->SMTPAuth = 'login';
+            $this->getMailer()->SMTPAuth = true;
             $this->getMailer()->Username = $this->config->getUsername();
             $this->getMailer()->Password = $this->config->getPassword();
         } else {
-            $this->getMailer()->SMTPAuth = 'plain';
+            $this->getMailer()->SMTPAuth = false;
         }
         $this->getMailer()->SMTPSecure = $this->config->getSecure();
         $this->getMailer()->Port = $this->config->getPort();
