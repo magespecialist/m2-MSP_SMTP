@@ -1,14 +1,12 @@
 {
     "name": "msp/smtp",
-    "description": "",
+    "description": "SMTP with PHPMailer",
     "require": {
-        "php": "^7.0|^7.1",
         "magento/magento2-base": "^2.3.0",
         "msp/common": "*",
-        "magento/magento-composer-installer": "*"
+        "phpmailer/phpmailer": "~6.0"
     },
     "suggest": {
-
     },
     "type": "magento2-module",
     "license": "OSL-3.0",

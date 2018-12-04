@@ -1,22 +1,10 @@
 <?php
 /**
- * MageSpecialist
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to info@magespecialist.it so we can send you a copy immediately.
- *
- * @category   MSP
- * @package    MSP_SMTP
- * @copyright  Copyright (c) 2018 Skeeller srl (http://www.magespecialist.it)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © MageSpecialist - Skeeller srl. All rights reserved.
+ * See COPYING.txt for license details.
  */
+
+declare(strict_types=1);
 
 namespace MSP\SMTP\Model;
 
@@ -24,16 +12,13 @@ use Magento\Framework\App\Config\ScopeConfigInterface;
 
 class Config
 {
-
-
-    const XML_PATH_SMTP_HOST = 'system/msp_smtp/host';
-    const XML_PATH_SMTP_PORT = 'system/msp_smtp/port';
-    const XML_PATH_SMTP_AUTH = 'system/msp_smtp/auth';
-    const XML_PATH_SMTP_USERNAME = 'system/msp_smtp/username';
-    const XML_PATH_SMTP_PASSWORD = 'system/msp_smtp/password';
-    const XML_PATH_SMTP_SSL = 'system/msp_smtp/ssl';
-    const XML_PATH_DEBUG_MODE = 'system/msp_smtp/debug';
-
+    private const XML_PATH_SMTP_HOST = 'system/msp_smtp/host';
+    private const XML_PATH_SMTP_PORT = 'system/msp_smtp/port';
+    private const XML_PATH_SMTP_AUTH = 'system/msp_smtp/auth';
+    private const XML_PATH_SMTP_USERNAME = 'system/msp_smtp/username';
+    private const XML_PATH_SMTP_PASSWORD = 'system/msp_smtp/password';
+    private const XML_PATH_SMTP_SECURE = 'system/msp_smtp/secure';
+    private const XML_PATH_DEBUG_MODE = 'system/msp_smtp/debug';
 
     protected $scopeConfig;
 
@@ -47,7 +32,7 @@ class Config
     /**
      * @return string
      */
-    public function getHost()
+    public function getHost(): string
     {
         return $this->scopeConfig->getValue(static::XML_PATH_SMTP_HOST);
     }
@@ -55,15 +40,15 @@ class Config
     /**
      * @return int
      */
-    public function getPort()
+    public function getPort(): int
     {
-        return (int) $this->scopeConfig->getValue(static::XML_PATH_SMTP_PORT);
+        return (int)$this->scopeConfig->getValue(static::XML_PATH_SMTP_PORT);
     }
 
     /**
      * @return string
      */
-    public function getAuthType()
+    public function getAuthType(): string
     {
         return $this->scopeConfig->getValue(static::XML_PATH_SMTP_AUTH);
     }
@@ -71,7 +56,7 @@ class Config
     /**
      * @return string
      */
-    public function getUsername()
+    public function getUsername(): string
     {
         return $this->scopeConfig->getValue(static::XML_PATH_SMTP_USERNAME);
     }
@@ -79,7 +64,7 @@ class Config
     /**
      * @return string
      */
-    public function getPassword()
+    public function getPassword(): string
     {
         return $this->scopeConfig->getValue(static::XML_PATH_SMTP_PASSWORD);
     }
@@ -88,15 +73,15 @@ class Config
     /**
      * @return string
      */
-    public function getSSL()
+    public function getSecure(): string
     {
-        return $this->scopeConfig->getValue(static::XML_PATH_SMTP_SSL);
+        return $this->scopeConfig->getValue(static::XML_PATH_SMTP_SECURE) ?: '';
     }
 
     /**
      * @return bool
      */
-    public function getDebugMode()
+    public function getDebugMode(): bool
     {
         return $this->scopeConfig->isSetFlag(static::XML_PATH_DEBUG_MODE);
     }

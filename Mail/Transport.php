@@ -1,32 +1,20 @@
 <?php
 /**
- * MageSpecialist
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to info@magespecialist.it so we can send you a copy immediately.
- *
- * @category   MSP
- * @package    MSP_SMTP
- * @copyright  Copyright (c) 2018 Skeeller srl (http://www.magespecialist.it)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © MageSpecialist - Skeeller srl. All rights reserved.
+ * See COPYING.txt for license details.
  */
+
+declare(strict_types=1);
 
 namespace MSP\SMTP\Mail;
 
-use Magento\Framework\Mail\MessageInterface;
+use Magento\Framework\Mail\MailMessageInterface;
 use Monolog\Logger;
+use PHP_CodeSniffer\Tokenizers\PHP;
 use Psr\Log\LoggerInterface;
 use MSP\SMTP\Model\Config;
-use Zend\Mail\Message as ZendMessage;
-use Zend\Mail\Transport\Smtp;
-use Zend\Mail\Transport\SmtpOptions;
+use PHPMailer\PHPMailer\PHPMailer;
+use PHPMailer\PHPMailer\Exception;
 
 class Transport implements \Magento\Framework\Mail\TransportInterface
 {
@@ -34,28 +22,32 @@ class Transport implements \Magento\Framework\Mail\TransportInterface
      * @var Config
      */
     protected $config;
+
     /**
      * @var LoggerInterface
      */
     protected $logger;
+
     /**
-     * @var Smtp
-     */
-    private $zendTransport;
-    /**
-     * @var MessageInterface
+     * @var MailMessageInterface
      */
     private $message;
 
+    /**
+     * @var PHPMailer
+     */
+    private $mailer;
+
     public function __construct(
         Config $config,
-        MessageInterface $message,
-        LoggerInterface $logger
+        MailMessageInterface $message,
+        LoggerInterface $logger,
+        PHPMailer $mailer
     ) {
         $this->config = $config;
         $this->message = $message;
         $this->logger = $logger;
-        $this->zendTransport = new Smtp();
+        $this->mailer = $mailer;
     }
 
     /**
@@ -64,53 +56,95 @@ class Transport implements \Magento\Framework\Mail\TransportInterface
     public function sendMessage()
     {
         try {
-            $options = new SmtpOptions($this->getConfiguration());
-            $this->zendTransport->setOptions($options);
-            /** @var \Zend\Mail\Message $message */
-            $message = ZendMessage::fromString($this->message->getRawMessage());
-            $this->zendTransport->send($message);
+            $this->setSmtpOptions();
+            $this->setRecipients();
+            $this->setContent();
+
+            $this->getMailer()->send();
 
             if ($this->config->getDebugMode()) {
-                /** @var \Zend\Mail\Message $message */
-                $message = ZendMessage::fromString($this->message->getRawMessage());
-                $this->logger->log(Logger::DEBUG, __("Mail sent to %1 with subject %2", $message->getTo()->current()->getEmail(), $message->getSubject()));
+                $zendMailMessage = \Zend\Mail\Message::fromString($this->getMessage()->getRawMessage());
+                $this->logger->log(Logger::DEBUG, __("Mail sent to %1 with subject %2", $zendMailMessage->getTo()->rewind()->getEmail(), $zendMailMessage->getSubject()));
             }
-        } catch (\Exception $e) {
-            /** @var \Zend\Mail\Message $message */
-            $message = ZendMessage::fromString($this->message->getRawMessage());
-            $this->logger->log(Logger::ERROR, __("Failed to send email %1 with subject %2; error: %3", $message->getTo()->current()->getEmail(), $message->getSubject(), $e->getMessage()));
-            throw new \Magento\Framework\Exception\MailException(new \Magento\Framework\Phrase($e->getMessage()), $e);
+        } catch (Exception $e) {
+            throw new \Magento\Framework\Exception\MailException(new \Magento\Framework\Phrase($this->getMailer()->ErrorInfo), $e);
         }
     }
 
-    /**
-     * @return array
-     */
-    public function getConfiguration()
+    private function setSmtpOptions(): void
     {
-        $config = [
-            'port' => $this->config->getPort(),
-            'connection_class' => $this->config->getAuthType(),
-            'host' => $this->config->getHost(),
-            'connection_config' => []
-        ];
+        $this->getMailer()->isSMTP();
+        $this->getMailer()->Host = $this->config->getHost();
+        if ($this->config->getAuthType() === 'login') {
+            $this->getMailer()->SMTPAuth = 'login';
+            $this->getMailer()->Username = $this->config->getUsername();
+            $this->getMailer()->Password = $this->config->getPassword();
+        } else {
+            $this->getMailer()->SMTPAuth = 'plain';
+        }
+        $this->getMailer()->SMTPSecure = $this->config->getSecure();
+        $this->getMailer()->Port = $this->config->getPort();
+    }
 
-        if ($this->config->getAuthType() == 'login') {
-            $config['connection_config']['username'] = $this->config->getUsername();
-            $config['connection_config']['password'] = $this->config->getPassword();
+    public function setRecipients(): void
+    {
+        /** @var \Zend\Mail\Message $zendMailMessage */
+        $zendMailMessage = \Zend\Mail\Message::fromString($this->getMessage()->getRawMessage());
+
+        $recipient = $zendMailMessage->getFrom()->rewind();
+        $this->getMailer()->setFrom($recipient->getEmail(), $recipient->getName());
+
+        $recipient = $zendMailMessage->getTo()->rewind();
+        while ($recipient) {
+            $this->getMailer()->addAddress($recipient->getEmail(), $recipient->getName());
+            $recipient = $zendMailMessage->getTo()->next();
         }
 
-        if ($this->config->getSSL() !== 'no') {
-            $config['connection_config']['ssl'] = $this->config->getSSL();
+        $recipient = $zendMailMessage->getReplyTo()->rewind();
+        while ($recipient) {
+            $this->getMailer()->addReplyTo($recipient->getEmail(), $recipient->getName());
+            $recipient = $zendMailMessage->getReplyTo()->next();
         }
 
-        return $config;
+        $recipient = $zendMailMessage->getCc()->rewind();
+        while ($recipient) {
+            $this->getMailer()->addCC($recipient->getEmail(), $recipient->getName());
+            $recipient = $zendMailMessage->getCc()->next();
+        }
+
+        $recipient = $zendMailMessage->getBCC()->rewind();
+        while ($recipient) {
+            $this->getMailer()->addBCC($recipient->getEmail(), $recipient->getName());
+            $recipient = $zendMailMessage->addBCC()->next();
+        }
+    }
+
+    public function setContent(): void
+    {
+        $this->getMailer()->isHTML(true);
+        $this->getMailer()->Subject = $this->getMessage()->getSubject();
+
+        $this->getMailer()->CharSet = PHPMailer::CHARSET_UTF8;
+
+        /** @var \Zend\Mime\Message $body */
+        $body = $this->getMessage()->getBody();
+
+        /** @var \Zend\Mime\Part $part */
+        $part = $body->getParts()[0];
+        $part->setEncoding();
+        $this->getMailer()->Body = $part->getContent();
+        $this->getMailer()->AltBody = strip_tags($part->getContent());
+    }
+
+    public function getMailer(): \PHPMailer\PHPMailer\PHPMailer
+    {
+        return $this->mailer;
     }
 
     /**
      * @inheritdoc
      */
-    public function getMessage()
+    public function getMessage(): \Magento\Framework\Mail\MailMessageInterface
     {
         return $this->message;
     }

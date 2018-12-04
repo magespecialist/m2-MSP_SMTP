@@ -1,18 +1,15 @@
 <?xml version="1.0"?>
+<!--
+  ~ Copyright © MageSpecialist - Skeeller srl. All rights reserved.
+  ~ See COPYING.txt for license details.
+  -->
+
 <config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:noNamespaceSchemaLocation="urn:magento:framework:ObjectManager/etc/config.xsd">
 
     <preference for="Magento\Framework\Mail\TransportInterface" type="MSP\SMTP\Mail\Transport" />
 
-    <type name="Magento\Framework\Console\CommandList">
-        <arguments>
-            <argument name="commands" xsi:type="array">
-                <item name="msp_smtp_selftest" xsi:type="object">MSP\SMTP\Console\SelftestCommand</item>
-            </argument>
-        </arguments>
-    </type>
-
-    <virtualType name="MSP\SMTP\Log\Logger" type="\Monolog\Logger">
+    <virtualType name="MSP\SMTP\Virtual\Logger" type="\Monolog\Logger">
         <arguments>
             <argument name="name" xsi:type="string">MSP::SMTP</argument>
             <argument name="handlers"  xsi:type="array">
@@ -21,9 +18,16 @@
         </arguments>
     </virtualType>
 
+    <virtualType name="MSP\SMTP\Virtual\Mailer" type="\PHPMailer\PHPMailer\PHPMailer">
+        <arguments>
+            <argument name="exceptions" xsi:type="boolean">true</argument>
+        </arguments>
+    </virtualType>
+
     <type name="MSP\SMTP\Mail\Transport">
         <arguments>
-            <argument name="logger" xsi:type="object">MSP\SMTP\Log\Logger</argument>
+            <argument name="logger" xsi:type="object">MSP\SMTP\Virtual\Logger</argument>
+            <argument name="mailer" xsi:type="object">MSP\SMTP\Virtual\Mailer</argument>
         </arguments>
     </type>
 
@@ -37,7 +41,7 @@
                 <item name="system/msp_smtp/host" xsi:type="string">1</item>
                 <item name="system/msp_smtp/port" xsi:type="string">1</item>
                 <item name="system/msp_smtp/auth" xsi:type="string">1</item>
-                <item name="system/msp_smtp/ssl" xsi:type="string">1</item>
+                <item name="system/msp_smtp/secure" xsi:type="string">1</item>
             </argument>
         </arguments>
     </type>
