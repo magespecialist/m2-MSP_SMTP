@@ -138,6 +138,9 @@ class Transport implements \Magento\Framework\Mail\TransportInterface
 
     public function getMailer(): \PHPMailer\PHPMailer\PHPMailer
     {
+        if (!$this->mailer) {
+            $this->mailer = new PHPMailer();
+        }
         return $this->mailer;
     }
 
