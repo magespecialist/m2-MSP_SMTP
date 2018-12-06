@@ -41,13 +41,11 @@ class Transport implements \Magento\Framework\Mail\TransportInterface
     public function __construct(
         Config $config,
         MailMessageInterface $message,
-        LoggerInterface $logger,
-        PHPMailer $mailer
+        LoggerInterface $logger
     ) {
         $this->config = $config;
         $this->message = $message;
         $this->logger = $logger;
-        $this->mailer = $mailer;
     }
 
     /**
