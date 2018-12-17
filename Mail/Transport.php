@@ -113,7 +113,7 @@ class Transport implements \Magento\Framework\Mail\TransportInterface
         $recipient = $zendMailMessage->getBCC()->rewind();
         while ($recipient) {
             $this->getMailer()->addBCC($recipient->getEmail(), $recipient->getName());
-            $recipient = $zendMailMessage->addBCC()->next();
+            $recipient = $zendMailMessage->getBCC()->next();
         }
     }
 
