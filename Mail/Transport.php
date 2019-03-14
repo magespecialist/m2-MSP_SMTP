@@ -89,9 +89,6 @@ class Transport implements \Magento\Framework\Mail\TransportInterface
         /** @var \Zend\Mail\Message $zendMailMessage */
         $zendMailMessage = \Zend\Mail\Message::fromString($this->getMessage()->getRawMessage());
 
-        $recipient = $zendMailMessage->getFrom()->rewind();
-        $this->getMailer()->setFrom($recipient->getEmail(), $recipient->getName());
-
         $recipient = $zendMailMessage->getTo()->rewind();
         while ($recipient) {
             $this->getMailer()->addAddress($recipient->getEmail(), $recipient->getName());
