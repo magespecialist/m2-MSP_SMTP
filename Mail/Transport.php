@@ -124,14 +124,21 @@ class Transport implements \Magento\Framework\Mail\TransportInterface
 
         $this->getMailer()->CharSet = PHPMailer::CHARSET_UTF8;
 
-        /** @var \Zend\Mime\Message $body */
         $body = $this->getMessage()->getBody();
 
-        /** @var \Zend\Mime\Part $part */
-        $part = $body->getParts()[0];
-        $part->setEncoding();
-        $this->getMailer()->Body = $part->getContent();
-        $this->getMailer()->AltBody = strip_tags($part->getContent());
+        if ($body instanceof \Zend\Mime\Message) {
+            /** @var \Zend\Mime\Part $part */
+            $part = $body->getParts()[0];
+            $part->setEncoding();
+            $this->getMailer()->Body = $part->getContent();
+            $this->getMailer()->AltBody = strip_tags($part->getContent());
+        } else if (is_string($body)) {
+            /** @var string $body */
+            $this->getMailer()->Body = strip_tags($body);
+            $this->getMailer()->AltBody = strip_tags($body);
+        } else {
+            throw new \Exception("Body mail unrecognized");
+        }
     }
 
     public function getMailer(): \PHPMailer\PHPMailer\PHPMailer
