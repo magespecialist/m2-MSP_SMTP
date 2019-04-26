@@ -2,7 +2,7 @@
     "name": "msp/smtp",
     "description": "SMTP with PHPMailer",
     "require": {
-        "magento/magento2-base": "^2.3.0",
+        "magento/magento2-base": ">=2.2.8",
         "msp/common": "*",
         "phpmailer/phpmailer": "~6.0"
     },
