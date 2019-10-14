@@ -8,7 +8,9 @@ declare(strict_types=1);
 
 namespace MSP\SMTP\Mail;
 
-use Magento\Framework\Mail\MailMessageInterface;
+use Magento\Framework\Mail\EmailMessageInterface;
+use Magento\Framework\Mail\MimeMessageInterface;
+use Magento\Framework\Mail\MimePartInterface;
 use Monolog\Logger;
 use PHP_CodeSniffer\Tokenizers\PHP;
 use Psr\Log\LoggerInterface;
@@ -29,7 +31,7 @@ class Transport implements \Magento\Framework\Mail\TransportInterface
     protected $logger;
 
     /**
-     * @var MailMessageInterface
+     * @var EmailMessageInterface
      */
     private $message;
 
@@ -40,7 +42,7 @@ class Transport implements \Magento\Framework\Mail\TransportInterface
 
     public function __construct(
         Config $config,
-        MailMessageInterface $message,
+        EmailMessageInterface $message,
         LoggerInterface $logger
     ) {
         $this->config = $config;
@@ -129,10 +131,9 @@ class Transport implements \Magento\Framework\Mail\TransportInterface
 
         $body = $this->getMessage()->getBody();
 
-        if ($body instanceof \Zend\Mime\Message) {
-            /** @var \Zend\Mime\Part $part */
+        if ($body instanceof MimeMessageInterface) {
+            /** @var MimePartInterface $part */
             $part = $body->getParts()[0];
-            $part->setEncoding();
             $this->getMailer()->Body = $part->getContent();
             $this->getMailer()->AltBody = strip_tags($part->getContent());
         } else if (is_string($body)) {
@@ -155,7 +156,7 @@ class Transport implements \Magento\Framework\Mail\TransportInterface
     /**
      * @inheritdoc
      */
-    public function getMessage(): \Magento\Framework\Mail\MailMessageInterface
+    public function getMessage(): \Magento\Framework\Mail\EMailMessageInterface
     {
         return $this->message;
     }
