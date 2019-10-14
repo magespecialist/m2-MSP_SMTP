@@ -128,6 +128,7 @@ class Transport implements \Magento\Framework\Mail\TransportInterface
         $this->getMailer()->Subject = $this->getMessage()->getSubject();
 
         $this->getMailer()->CharSet = PHPMailer::CHARSET_UTF8;
+        $this->getMailer()->Encoding = PHPMailer::ENCODING_QUOTED_PRINTABLE;
 
         $body = $this->getMessage()->getBody();
 
