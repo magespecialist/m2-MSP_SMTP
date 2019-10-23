@@ -81,6 +81,9 @@ class Transport implements \Magento\Framework\Mail\TransportInterface
             $this->getMailer()->SMTPAuth = false;
         }
         $this->getMailer()->SMTPSecure = $this->config->getSecure();
+        if (empty($this->config->getSecure())) {
+            $this->getMailer()->SMTPAutoTLS = false;
+        }
         $this->getMailer()->Port = $this->config->getPort();
     }
 
