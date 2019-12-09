@@ -9,6 +9,7 @@ declare(strict_types=1);
 namespace MSP\SMTP\Model;
 
 use Magento\Framework\App\Config\ScopeConfigInterface;
+use Magento\Framework\Encryption\EncryptorInterface;
 
 class Config
 {
@@ -22,11 +23,18 @@ class Config
 
     protected $scopeConfig;
 
+    /**
+     * @var EncryptorInterface
+     */
+    private $encryptor;
+
     public function __construct(
-        ScopeConfigInterface $scopeConfigInterface
+        ScopeConfigInterface $scopeConfigInterface,
+        EncryptorInterface $encryptor
     ) {
 
         $this->scopeConfig = $scopeConfigInterface;
+        $this->encryptor = $encryptor;
     }
 
     /**
@@ -66,9 +74,9 @@ class Config
      */
     public function getPassword(): string
     {
-        return $this->scopeConfig->getValue(static::XML_PATH_SMTP_PASSWORD);
+        $cryptedValue = $this->scopeConfig->getValue(static::XML_PATH_SMTP_PASSWORD);
+        return $this->encryptor->decrypt($cryptedValue);
     }
-
 
     /**
      * @return string
