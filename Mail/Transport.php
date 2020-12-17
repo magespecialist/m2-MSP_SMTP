@@ -9,6 +9,7 @@ declare(strict_types=1);
 namespace MSP\SMTP\Mail;
 
 use Magento\Framework\Mail\EmailMessageInterface;
+use Magento\Framework\Mail\MimeInterface;
 use Magento\Framework\Mail\MimeMessageInterface;
 use Magento\Framework\Mail\MimePartInterface;
 use Monolog\Logger;
@@ -137,9 +138,27 @@ class Transport implements \Magento\Framework\Mail\TransportInterface
 
         if ($body instanceof MimeMessageInterface || $body instanceof \Zend\Mime\Message) {
             /** @var MimePartInterface $part */
-            $part = $body->getParts()[0];
-            $this->getMailer()->Body = $part->getRawContent();
-            $this->getMailer()->AltBody = strip_tags($part->getContent());
+            foreach ($body->getParts() as $part) {
+                switch ($part->getType()) {
+                    case MimeInterface::TYPE_HTML:
+                        $this->getMailer()->Body = $part->getRawContent();
+                        $this->getMailer()->AltBody = strip_tags($part->getContent());
+                        break;
+                    case MimeInterface::TYPE_TEXT:
+                        $this->getMailer()->AltBody = $part->getContent();
+                        break;
+                    default:
+                        if ($part->getDisposition() === MimeInterface::DISPOSITION_ATTACHMENT) {
+                            $this->getMailer()->addStringAttachment(
+                                $part->getRawContent(),
+                                $part->getFileName(),
+                                $part->getEncoding(),
+                                $part->getType()
+                            );
+                        }
+                        break;
+                }
+            }
         } else if (is_string($body)) {
             /** @var string $body */
             $this->getMailer()->Body = strip_tags($body);
