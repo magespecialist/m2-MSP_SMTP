@@ -135,7 +135,7 @@ class Transport implements \Magento\Framework\Mail\TransportInterface
 
         $body = $this->getMessage()->getBody();
 
-        if ($body instanceof MimeMessageInterface) {
+        if ($body instanceof MimeMessageInterface || $body instanceof \Zend\Mime\Message) {
             /** @var MimePartInterface $part */
             $part = $body->getParts()[0];
             $this->getMailer()->Body = $part->getRawContent();
